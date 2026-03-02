@@ -14,9 +14,7 @@ import z from "zod";
 
 import { auth } from "./lib/auth.js";
 
-const app = Fastify({
-  logger: true,
-});
+const app = Fastify({ logger: true });
 
 app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
@@ -24,8 +22,8 @@ app.setSerializerCompiler(serializerCompiler);
 await app.register(fastifySwagger, {
   openapi: {
     info: {
-      title: "Bootcamp Fit AI",
-      description: "API Bootcamp Fit API",
+      title: "Bootcamp Fit.AI",
+      description: "API do Bootcamp Fit.AI",
       version: "1.0.0",
     },
     servers: [
@@ -48,8 +46,8 @@ await app.register(fastifyApiReference, {
   configuration: {
     sources: [
       {
-        title: "Fit API",
-        slug: "fit-api",
+        title: "Bootcamp Fit.AI",
+        slug: "bootcamp-fit-ai",
         url: "/swagger.json",
       },
       {
