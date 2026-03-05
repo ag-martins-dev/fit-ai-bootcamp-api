@@ -3,7 +3,6 @@ import "dotenv/config";
 import fastifyCors from "@fastify/cors";
 import fastifySwagger from "@fastify/swagger";
 import fastifyApiReference from "@scalar/fastify-api-reference";
-import { fromNodeHeaders } from "better-auth/node";
 import Fastify from "fastify";
 import {
   jsonSchemaTransform,
@@ -13,9 +12,8 @@ import {
 } from "fastify-type-provider-zod";
 import z from "zod";
 
-import { WeekDay } from "./generated/prisma/enums.js";
 import { auth } from "./lib/auth.js";
-import { CreateWorkoutPlan } from "./usecases/CreateWorkoutPlan.js";
+import { workoutPlanRoutes } from "./routes/workout-plan.js";
 
 const app = Fastify({ logger: true });
 
@@ -61,6 +59,8 @@ await app.register(fastifyApiReference, {
     ],
   },
 });
+
+await app.register(workoutPlanRoutes, { prefix: "/workout-plans" });
 
 app.withTypeProvider<ZodTypeProvider>().route({
   method: "GET",
@@ -120,84 +120,6 @@ app.route({
       reply.status(500).send({
         error: "Internal authentication error",
         code: "AUTH_FAILURE",
-      });
-    }
-  },
-});
-
-app.withTypeProvider<ZodTypeProvider>().route({
-  method: "POST",
-  url: "/workout-plans",
-  schema: {
-    body: z.object({
-      name: z.string().trim().min(1, "Workout plan needs a name."),
-      workoutDays: z.array(
-        z.object({
-          name: z.string().trim().min(1, "Workout day needs a name."),
-          weekDay: z.enum(WeekDay),
-          isRest: z.boolean().default(false),
-          estimatedDurationInSeconds: z.number().min(1, "Invalid duration."),
-          exercises: z.array(
-            z.object({
-              order: z.number().min(0, "Exercise order must be at least 0."),
-              name: z.string().trim().min(1, "Exercise needs a name."),
-              sets: z.number().min(1, "Exercise must be at least 1 set."),
-              reps: z.number().min(1, "Exercise must be at least 1 rep."),
-              restTimeInSeconds: z
-                .number()
-                .min(1, "Exercice rest time must be at least 1 second."),
-            }),
-          ),
-        }),
-      ),
-    }),
-    response: {
-      201: z.object({
-        id: z.uuid(),
-      }),
-      400: z.object({
-        message: z.string(),
-        code: z.string(),
-      }),
-      401: z.object({
-        message: z.string(),
-        code: z.string(),
-      }),
-      500: z.object({
-        message: z.string(),
-        code: z.string(),
-      }),
-    },
-  },
-  handler: async (req, reply) => {
-    try {
-      const session = await auth.api.getSession({
-        headers: fromNodeHeaders(req.headers),
-      });
-      const isUserUnauthorized = !session;
-
-      if (isUserUnauthorized) {
-        return reply.status(401).send({
-          message: "Unauthorized",
-          code: "UNAUTHORIZED",
-        });
-      }
-
-      const { name, workoutDays } = req.body;
-
-      const createWorkoutPlan = new CreateWorkoutPlan();
-      const workoutPlanId = await createWorkoutPlan.execute({
-        userId: session.user.id,
-        name,
-        workoutDays,
-      });
-
-      return reply.status(201).send(workoutPlanId);
-    } catch (err) {
-      app.log.error(err);
-      return reply.status(500).send({
-        message: "Internal Server Error",
-        code: "INTERNAL_SERVER_ERROR",
       });
     }
   },

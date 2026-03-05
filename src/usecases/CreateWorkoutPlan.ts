@@ -1,3 +1,5 @@
+import { randomUUID } from "crypto";
+
 import { WeekDay } from "../generated/prisma/enums.js";
 import { prisma } from "../lib/db.js";
 
@@ -9,7 +11,7 @@ interface InputDto {
     weekDay: WeekDay;
     isRest: boolean;
     estimatedDurationInSeconds: number;
-    exercises: Array<{
+    workoutExercises: Array<{
       order: number;
       name: string;
       sets: number;
@@ -21,6 +23,20 @@ interface InputDto {
 
 export interface OutputDto {
   id: string;
+  name: string;
+  workoutDays: Array<{
+    name: string;
+    weekDay: WeekDay;
+    isRest: boolean;
+    estimatedDurationInSeconds: number;
+    workoutExercises: Array<{
+      order: number;
+      name: string;
+      sets: number;
+      reps: number;
+      restTimeInSeconds: number;
+    }>;
+  }>;
 }
 
 export class CreateWorkoutPlan {
@@ -44,8 +60,9 @@ export class CreateWorkoutPlan {
         });
       }
 
-      const createdWorkoutDay = await tx.workoutPlan.create({
+      const result = await tx.workoutPlan.create({
         data: {
+          id: randomUUID(),
           userId: dto.userId,
           name: dto.name,
           workoutDays: {
@@ -55,7 +72,7 @@ export class CreateWorkoutPlan {
               estimatedDurationInSeconds: workoutDay.estimatedDurationInSeconds,
               isRest: workoutDay.isRest,
               workoutExercises: {
-                create: workoutDay.exercises.map((exercise) => ({
+                create: workoutDay.workoutExercises.map((exercise) => ({
                   name: exercise.name,
                   order: exercise.order,
                   sets: exercise.sets,
@@ -66,11 +83,16 @@ export class CreateWorkoutPlan {
             })),
           },
         },
+        include: {
+          workoutDays: {
+            include: {
+              workoutExercises: true,
+            },
+          },
+        },
       });
 
-      return {
-        id: createdWorkoutDay.id,
-      };
+      return result;
     });
   }
 }
