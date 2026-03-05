@@ -35,6 +35,13 @@
 - When filtering/querying: cast strings to WeekDay with `as WeekDay`
 - Example: `weekDay: targetWeekDay as WeekDay`
 
+## Date/Time Manipulation
+- **ALWAYS use dayjs** for any date manipulation, parsing, formatting, or calculations
+- Import: `import dayjs from "dayjs"`
+- For UTC operations: extend with `import utc from "dayjs/plugin/utc.js"` and call `dayjs.extend(utc)` then use `dayjs.utc()`
+- Convert Prisma Date objects to ISO strings: `date.toISOString()` when returning in DTOs
+- Never use native JavaScript Date methods for calculations - use dayjs instead
+
 ## Error Messages
 - Descriptive, include what failed and why
 - Example: "Workout plan not found for user {userId}"

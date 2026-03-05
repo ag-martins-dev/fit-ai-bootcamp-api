@@ -39,3 +39,10 @@ export class MyUseCase {
 - **WeekDay enum**: Always use `WeekDay` type for weekday fields (never raw strings)
 - Pattern when converting strings: `weekDay: stringValue as WeekDay`
 - Example in queries: `where: { weekDay: targetWeekDay as WeekDay }`
+
+## Date Handling Strategy
+- **ALWAYS use dayjs** for date manipulations, parsing, arithmetic, and formatting
+- Never use native JavaScript Date methods for calculations
+- Prisma returns Date objects → convert to ISO strings with `.toISOString()` when returning DTOs
+- For UTC operations: use `dayjs.utc()` after extending with UTC plugin
+- Dayjs is the single source of truth for all date operations
