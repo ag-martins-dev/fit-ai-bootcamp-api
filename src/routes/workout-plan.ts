@@ -5,13 +5,19 @@ import z from "zod";
 
 import {
   NotFoundError,
+  SessionAlreadyCompletedError,
   SessionAlreadyStartedError,
   WorkoutPlanNotActiveError,
 } from "../errors/index.js";
 import { auth } from "../lib/auth.js";
-import { ErrorSchema, WorkoutPlanSchema } from "../schemas/index.js";
+import {
+  ErrorSchema,
+  UpdateWorkoutSessionSchema,
+  WorkoutPlanSchema,
+} from "../schemas/index.js";
 import { CreateWorkoutPlan } from "../usecases/CreateWorkoutPlan.js";
 import { StartWorkoutSession } from "../usecases/StartWorkoutSession.js";
+import { UpdateWorkoutSession } from "../usecases/UpdateWorkoutSession.js";
 
 export const workoutPlanRoutes = async (app: FastifyInstance) => {
   app.withTypeProvider<ZodTypeProvider>().route({
@@ -129,6 +135,96 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
           return reply.status(404).send({
             message: err.message,
             code: "NOT_FOUND_ERROR",
+          });
+        }
+
+        return reply.status(500).send({
+          message: "Internal Server Error",
+          code: "INTERNAL_SERVER_ERROR",
+        });
+      }
+    },
+  });
+
+  app.withTypeProvider<ZodTypeProvider>().route({
+    method: "PUT",
+    url: "/:workoutPlanId/days/:workoutDayId/sessions/:sessionId",
+    schema: {
+      tags: ["Workout Plan"],
+      summary: "Update workout session completion",
+      params: z.object({
+        workoutPlanId: z.uuid(),
+        workoutDayId: z.uuid(),
+        sessionId: z.uuid(),
+      }),
+      body: UpdateWorkoutSessionSchema,
+      response: {
+        200: z.object({
+          id: z.uuid(),
+          completedAt: z.string(),
+          startedAt: z.string(),
+        }),
+        400: ErrorSchema,
+        401: ErrorSchema,
+        404: ErrorSchema,
+        409: ErrorSchema,
+        500: ErrorSchema,
+      },
+    },
+    handler: async (req, reply) => {
+      try {
+        const session = await auth.api.getSession({
+          headers: fromNodeHeaders(req.headers),
+        });
+
+        if (!session) {
+          return reply.status(401).send({
+            message: "Unauthorized",
+            code: "UNAUTHORIZED",
+          });
+        }
+
+        const { workoutPlanId, workoutDayId, sessionId } = req.params;
+        const { completedAt } = req.body;
+
+        const updateWorkoutSession = new UpdateWorkoutSession();
+        const result = await updateWorkoutSession.execute({
+          userId: session.user.id,
+          workoutPlanId,
+          workoutDayId,
+          sessionId,
+          completedAt,
+        });
+
+        return reply.status(200).send(result);
+      } catch (err) {
+        app.log.error(err);
+
+        if (err instanceof SessionAlreadyCompletedError) {
+          return reply.status(409).send({
+            message: err.message,
+            code: "SESSION_ALREADY_COMPLETED",
+          });
+        }
+
+        if (err instanceof NotFoundError) {
+          return reply.status(404).send({
+            message: err.message,
+            code: "NOT_FOUND",
+          });
+        }
+
+        if (err instanceof Error && err.message.includes("Unauthorized")) {
+          return reply.status(401).send({
+            message: err.message,
+            code: "UNAUTHORIZED",
+          });
+        }
+
+        if (err instanceof Error && err.message.includes("Completed date")) {
+          return reply.status(400).send({
+            message: err.message,
+            code: "INVALID_COMPLETED_DATE",
           });
         }
 

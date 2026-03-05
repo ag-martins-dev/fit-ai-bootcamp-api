@@ -18,3 +18,10 @@ export class SessionAlreadyStartedError extends Error {
     this.name = "SessionAlreadyStartedError";
   }
 }
+
+export class SessionAlreadyCompletedError extends Error {
+  constructor(readonly message: string) {
+    super(message);
+    this.name = "SessionAlreadyCompletedError";
+  }
+}

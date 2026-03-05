@@ -31,3 +31,7 @@ export const WorkoutPlanSchema = z.object({
     }),
   ),
 });
+
+export const UpdateWorkoutSessionSchema = z.object({
+  completedAt: z.iso.datetime(),
+});
