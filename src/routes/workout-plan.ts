@@ -12,11 +12,13 @@ import {
 import { auth } from "../lib/auth.js";
 import {
   ErrorSchema,
+  GetWorkoutDaySchema,
   GetWorkoutPlanSchema,
   UpdateWorkoutSessionSchema,
   WorkoutPlanSchema,
 } from "../schemas/index.js";
 import { CreateWorkoutPlan } from "../usecases/CreateWorkoutPlan.js";
+import { GetWorkoutDay } from "../usecases/GetWorkoutDay.js";
 import { GetWorkoutPlan } from "../usecases/GetWorkoutPlan.js";
 import { StartWorkoutSession } from "../usecases/StartWorkoutSession.js";
 import { UpdateWorkoutSession } from "../usecases/UpdateWorkoutSession.js";
@@ -290,6 +292,71 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
           return reply.status(401).send({
             message: err.message,
             code: "UNAUTHORIZED_ERROR",
+          });
+        }
+
+        return reply.status(500).send({
+          message: "Internal Server Error",
+          code: "INTERNAL_SERVER_ERROR",
+        });
+      }
+    },
+  });
+
+  app.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:workoutPlanId/days/:workoutDayId",
+    schema: {
+      tags: ["Workout Plan"],
+      summary: "Get a workout day with exercises and sessions",
+      params: z.object({
+        workoutPlanId: z.uuid(),
+        workoutDayId: z.uuid(),
+      }),
+      response: {
+        200: GetWorkoutDaySchema,
+        401: ErrorSchema,
+        404: ErrorSchema,
+        500: ErrorSchema,
+      },
+    },
+    handler: async (req, reply) => {
+      try {
+        const session = await auth.api.getSession({
+          headers: fromNodeHeaders(req.headers),
+        });
+
+        if (!session) {
+          return reply.status(401).send({
+            message: "Unauthorized",
+            code: "UNAUTHORIZED",
+          });
+        }
+
+        const { workoutPlanId, workoutDayId } = req.params;
+
+        const getWorkoutDay = new GetWorkoutDay();
+        const result = await getWorkoutDay.execute({
+          userId: session.user.id,
+          workoutPlanId,
+          workoutDayId,
+        });
+
+        return reply.status(200).send(result);
+      } catch (err) {
+        app.log.error(err);
+
+        if (err instanceof NotFoundError) {
+          return reply.status(404).send({
+            message: err.message,
+            code: "NOT_FOUND",
+          });
+        }
+
+        if (err instanceof Error && err.message.includes("Unauthorized")) {
+          return reply.status(401).send({
+            message: err.message,
+            code: "UNAUTHORIZED",
           });
         }
 
