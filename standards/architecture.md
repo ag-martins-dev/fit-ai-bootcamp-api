@@ -346,6 +346,36 @@ Todo commit deve seguir [Conventional Commits](https://www.conventionalcommits.o
 <type>(<scope>): <subject>
 ```
 
+### Regra Obrigatória: Análise de Ordem Antes de Commitar
+
+**SEMPRE** analize a ordem dos arquivos não rastreados (`Untracked files`) ANTES de fazer commits:
+
+```bash
+$ git status
+```
+
+**Por que?** Para garantir que os commits estejam em ordem cronológica lógica:
+
+1. **Identifique files não rastreados** que foram criados antes das modificações
+2. **Organize commits** na sequência em que foram criados:
+   - Documentação de tarefas/specs (chore, docs)
+   - Padrões e standards (docs)
+   - Implementação de features (feat, fix)
+3. **Evite commits fora de ordem** que prejudicam o histórico do projeto
+
+**Processo:**
+
+```bash
+# ✓ Certo
+1. git add docs/ tasks/ && git commit -m "chore: add specs and docs"
+2. git add standards/ && git commit -m "docs: add architecture"
+3. git add src/ && git commit -m "feat: implement feature"
+
+# ✗ Errado
+1. git add src/ && git commit -m "feat: implement feature"
+2. git add docs/ && git commit -m "chore: add specs"  # Fora de ordem!
+```
+
 ### Princípio Fundamental: Minimalismo
 
 **Commits devem ser SEMPRE o mais enxuto possível.** Isso significa:
