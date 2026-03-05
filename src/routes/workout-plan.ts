@@ -12,10 +12,12 @@ import {
 import { auth } from "../lib/auth.js";
 import {
   ErrorSchema,
+  GetWorkoutPlanSchema,
   UpdateWorkoutSessionSchema,
   WorkoutPlanSchema,
 } from "../schemas/index.js";
 import { CreateWorkoutPlan } from "../usecases/CreateWorkoutPlan.js";
+import { GetWorkoutPlan } from "../usecases/GetWorkoutPlan.js";
 import { StartWorkoutSession } from "../usecases/StartWorkoutSession.js";
 import { UpdateWorkoutSession } from "../usecases/UpdateWorkoutSession.js";
 
@@ -225,6 +227,69 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
           return reply.status(400).send({
             message: err.message,
             code: "INVALID_COMPLETED_DATE",
+          });
+        }
+
+        return reply.status(500).send({
+          message: "Internal Server Error",
+          code: "INTERNAL_SERVER_ERROR",
+        });
+      }
+    },
+  });
+
+  app.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/:workoutPlanId",
+    schema: {
+      tags: ["Workout Plan"],
+      summary: "Get a workout plan with its days",
+      params: z.object({
+        workoutPlanId: z.uuid(),
+      }),
+      response: {
+        200: GetWorkoutPlanSchema,
+        401: ErrorSchema,
+        404: ErrorSchema,
+        500: ErrorSchema,
+      },
+    },
+    handler: async (req, reply) => {
+      try {
+        const session = await auth.api.getSession({
+          headers: fromNodeHeaders(req.headers),
+        });
+
+        if (!session) {
+          return reply.status(401).send({
+            message: "Unauthorized",
+            code: "UNAUTHORIZED_ERROR",
+          });
+        }
+
+        const { workoutPlanId } = req.params;
+
+        const getWorkoutPlan = new GetWorkoutPlan();
+        const result = await getWorkoutPlan.execute({
+          userId: session.user.id,
+          workoutPlanId,
+        });
+
+        return reply.status(200).send(result);
+      } catch (err) {
+        app.log.error(err);
+
+        if (err instanceof NotFoundError) {
+          return reply.status(404).send({
+            message: err.message,
+            code: "NOT_FOUND_ERROR",
+          });
+        }
+
+        if (err instanceof Error && err.message.includes("Unauthorized")) {
+          return reply.status(401).send({
+            message: err.message,
+            code: "UNAUTHORIZED_ERROR",
           });
         }
 
