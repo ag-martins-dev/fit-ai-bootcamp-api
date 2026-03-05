@@ -11,10 +11,11 @@
 4. Verify no TypeScript errors
 5. Commit changes
 
-## Commit Strategy
+## Commit & Push Strategy
 **CRITICAL RULES**:
 1. **NEVER attempt to commit without explicit user permission** - Always ask/wait for user approval before running any git commit command
-2. Before `git add .`, analyze UNTRACKED files to ensure logical commit order
+2. **Auto-push after commit**: When user says "commit it" or similar, perform ALL commits AND automatically run `git push` afterward without asking
+3. Before `git add .`, analyze UNTRACKED files to ensure logical commit order
 
 Pattern for feature implementation:
 1. `chore: add task specification file` (tasks/X.md)
