@@ -15,7 +15,7 @@
 ## Zod Schemas
 - Schemas in src/schemas/index.ts as const exports
 - Pattern: `z.object({ field: z.type() })`
-- Datetime fields: `z.string().datetime()`
+- Datetime fields: **Always use `z.iso.datetime()`** (not `z.string().datetime()`)
 - Use `.omit({ id: true })` for creation endpoints
 
 ## Comments & Documentation

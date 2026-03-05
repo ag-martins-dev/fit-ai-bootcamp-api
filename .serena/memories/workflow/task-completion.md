@@ -12,7 +12,9 @@
 5. Commit changes
 
 ## Commit Strategy
-**Critical**: Before `git add .`, analyze UNTRACKED files to ensure logical commit order.
+**CRITICAL RULES**:
+1. **NEVER attempt to commit without explicit user permission** - Always ask/wait for user approval before running any git commit command
+2. Before `git add .`, analyze UNTRACKED files to ensure logical commit order
 
 Pattern for feature implementation:
 1. `chore: add task specification file` (tasks/X.md)

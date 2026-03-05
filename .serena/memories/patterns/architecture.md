@@ -31,8 +31,8 @@ export class MyUseCase {
 - Pattern: data flows through layers with explicit DTO interfaces
 
 ## ISO Datetime Handling
-- All timestamps stored as ISO strings (z.string().datetime())
-- Prisma returns Date objects, convert to ISO with `.toISOString()`
+- All datetime fields in schemas must use `z.iso.datetime()` (not `z.string().datetime()`)
+- Prisma returns Date objects, convert to ISO with `.toISOString()` when returning in responses
 
 ## Prisma Enums
 - All Prisma enums imported from `../generated/prisma/enums.js`
