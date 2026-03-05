@@ -52,6 +52,7 @@ model WorkoutDay {
   name                       String
   isRest                     Boolean           @default(false) @map("is_rest")
   estimatedDurationInSeconds Int               @map("estimated_duration_in_seconds")
+  coverImageUrl              String?
   createdAt                  DateTime          @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt                  DateTime          @updatedAt @map("updated_at") @db.Timestamptz()
   weekDay                    WeekDay           @map("week_day")
@@ -86,6 +87,8 @@ model WorkoutSession {
   completedAt  DateTime?  @map("completed_at") @db.Timestamptz()
   createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@map("workout_session")
 }
 
 model Session {
