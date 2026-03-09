@@ -23,16 +23,14 @@ export const WorkoutPlanSchema = z.object({
           name: z.string().trim().min(1, "Exercise needs a name."),
           sets: z.number().min(1, "Exercise must be at least 1 set."),
           reps: z.number().min(1, "Exercise must be at least 1 rep."),
-          restTimeInSeconds: z
-            .number()
-            .min(1, "Exercice rest time must be at least 1 second."),
+          restTimeInSeconds: z.number().min(1, "Exercice rest time must be at least 1 second."),
         }),
       ),
     }),
   ),
 });
 
-export const UpdateWorkoutSessionSchema = z.object({
+export const UpdateWorkoutSessionBodySchema = z.object({
   completedAt: z.iso.datetime(),
 });
 
@@ -100,4 +98,23 @@ export const GetWorkoutDaySchema = z.object({
       completedAt: z.string().optional(),
     }),
   ),
+});
+
+export const GetStatsBodySchema = z.object({
+  workoutStreak: z.number(),
+  consistencyByDay: z.record(
+    z.iso.date(),
+    z.object({
+      workoutDayCompleted: z.boolean(),
+      workoutDayStarted: z.boolean(),
+    }),
+  ),
+  completedWorkoutsCount: z.number(),
+  conclusionRate: z.number(),
+  totalTimeInSeconds: z.number(),
+});
+
+export const GetStatsQuerySchema = z.object({
+  from: z.iso.date(),
+  to: z.iso.date(),
 });

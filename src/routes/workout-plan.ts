@@ -14,7 +14,7 @@ import {
   ErrorSchema,
   GetWorkoutDaySchema,
   GetWorkoutPlanSchema,
-  UpdateWorkoutSessionSchema,
+  UpdateWorkoutSessionBodySchema,
   WorkoutPlanSchema,
 } from "../schemas/index.js";
 import { CreateWorkoutPlan } from "../usecases/CreateWorkoutPlan.js";
@@ -161,7 +161,7 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
         workoutDayId: z.uuid(),
         sessionId: z.uuid(),
       }),
-      body: UpdateWorkoutSessionSchema,
+      body: UpdateWorkoutSessionBodySchema,
       response: {
         200: z.object({
           id: z.uuid(),

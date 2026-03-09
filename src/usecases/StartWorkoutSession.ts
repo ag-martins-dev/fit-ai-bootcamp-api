@@ -1,10 +1,6 @@
 import { randomUUID } from "crypto";
 
-import {
-  NotFoundError,
-  SessionAlreadyStartedError,
-  WorkoutPlanNotActiveError,
-} from "../errors/index.js";
+import { NotFoundError, SessionAlreadyStartedError, WorkoutPlanNotActiveError } from "../errors/index.js";
 import { prisma } from "../lib/db.js";
 
 interface InputDto {
@@ -20,7 +16,9 @@ export interface OutputDto {
 export class StartWorkoutSession {
   async execute(dto: InputDto): Promise<OutputDto> {
     const workoutPlan = await prisma.workoutPlan.findUnique({
-      where: { id: dto.workoutPlanId },
+      where: {
+        id: dto.workoutPlanId,
+      },
     });
 
     if (!workoutPlan) {
@@ -36,7 +34,9 @@ export class StartWorkoutSession {
     }
 
     const workoutDay = await prisma.workoutDay.findUnique({
-      where: { id: dto.workoutDayId },
+      where: {
+        id: dto.workoutDayId,
+      },
     });
 
     if (!workoutDay) {
@@ -44,9 +44,7 @@ export class StartWorkoutSession {
     }
 
     if (workoutDay.workoutPlanId !== dto.workoutPlanId) {
-      throw new Error(
-        "Unauthorized: Workout day does not belong to workout plan",
-      );
+      throw new Error("Unauthorized: Workout day does not belong to workout plan");
     }
 
     const existingSession = await prisma.workoutSession.findFirst({
@@ -56,12 +54,10 @@ export class StartWorkoutSession {
     });
 
     if (existingSession) {
-      throw new SessionAlreadyStartedError(
-        "A session has already been started for this day.",
-      );
+      throw new SessionAlreadyStartedError("A session has already been started for this day.");
     }
 
-    const result = await prisma.workoutSession.create({
+    const workoutSession = await prisma.workoutSession.create({
       data: {
         id: randomUUID(),
         workoutDayId: dto.workoutDayId,
@@ -70,7 +66,7 @@ export class StartWorkoutSession {
     });
 
     return {
-      userWorkoutSessionId: result.id,
+      userWorkoutSessionId: workoutSession.id,
     };
   }
 }
