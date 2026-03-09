@@ -14,12 +14,14 @@ import {
   ErrorSchema,
   GetWorkoutDaySchema,
   GetWorkoutPlanSchema,
+  GetWorkoutPlansSchema,
   UpdateWorkoutSessionBodySchema,
   WorkoutPlanSchema,
 } from "../schemas/index.js";
 import { CreateWorkoutPlan } from "../usecases/CreateWorkoutPlan.js";
 import { GetWorkoutDay } from "../usecases/GetWorkoutDay.js";
 import { GetWorkoutPlan } from "../usecases/GetWorkoutPlan.js";
+import { GetWorkoutPlans } from "../usecases/GetWorkoutPlans.js";
 import { StartWorkoutSession } from "../usecases/StartWorkoutSession.js";
 import { UpdateWorkoutSession } from "../usecases/UpdateWorkoutSession.js";
 
@@ -28,7 +30,7 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
     method: "POST",
     url: "/",
     schema: {
-      tags: ["Workout Plan"],
+      tags: ["Workout plans"],
       summary: "Create a workout plan",
       body: WorkoutPlanSchema.omit({ id: true }),
       response: {
@@ -47,8 +49,8 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
 
         if (isUserUnauthorized) {
           return reply.status(401).send({
-            message: "Unauthorized",
-            code: "UNAUTHORIZED",
+            message: "Unauthorized.",
+            code: "UNAUTHORIZED_ERROR",
           });
         }
 
@@ -76,7 +78,7 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
     method: "POST",
     url: "/:workoutPlanId/days/:workoutDayId/sessions",
     schema: {
-      tags: ["Workout Plan"],
+      tags: ["Workout plans"],
       summary: "Start a workout session.",
       params: z.object({
         workoutPlanId: z.uuid(),
@@ -103,8 +105,8 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
 
         if (isUserUnauthorized) {
           return reply.status(401).send({
-            message: "Unauthorized",
-            code: "UNAUTHORIZED",
+            message: "Unauthorized.",
+            code: "UNAUTHORIZED_ERROR",
           });
         }
 
@@ -124,14 +126,14 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
         if (err instanceof WorkoutPlanNotActiveError) {
           return reply.status(422).send({
             message: err.message,
-            code: "WORKOUT_PLAN_NOT_ACTIVE",
+            code: "WORKOUT_PLAN_NOT_ACTIVE_ERROR",
           });
         }
 
         if (err instanceof SessionAlreadyStartedError) {
           return reply.status(409).send({
             message: err.message,
-            code: "WORKOUT_SESSION_ALREADY_STARTED",
+            code: "WORKOUT_SESSION_ALREADY_STARTED_ERROR",
           });
         }
 
@@ -154,7 +156,7 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
     method: "PUT",
     url: "/:workoutPlanId/days/:workoutDayId/sessions/:sessionId",
     schema: {
-      tags: ["Workout Plan"],
+      tags: ["Workout plans"],
       summary: "Update workout session completion",
       params: z.object({
         workoutPlanId: z.uuid(),
@@ -183,8 +185,8 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
 
         if (!session) {
           return reply.status(401).send({
-            message: "Unauthorized",
-            code: "UNAUTHORIZED",
+            message: "Unauthorized.",
+            code: "UNAUTHORIZED_ERROR",
           });
         }
 
@@ -221,7 +223,7 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
         if (err instanceof Error && err.message.includes("Unauthorized")) {
           return reply.status(401).send({
             message: err.message,
-            code: "UNAUTHORIZED",
+            code: "UNAUTHORIZED_ERROR",
           });
         }
 
@@ -244,8 +246,8 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
     method: "GET",
     url: "/:workoutPlanId",
     schema: {
-      tags: ["Workout Plan"],
-      summary: "Get a workout plan with its days",
+      tags: ["Workout plans"],
+      summary: "Get workout plan with its days",
       params: z.object({
         workoutPlanId: z.uuid(),
       }),
@@ -264,7 +266,7 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
 
         if (!session) {
           return reply.status(401).send({
-            message: "Unauthorized",
+            message: "Unauthorized.",
             code: "UNAUTHORIZED_ERROR",
           });
         }
@@ -307,7 +309,7 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
     method: "GET",
     url: "/:workoutPlanId/days/:workoutDayId",
     schema: {
-      tags: ["Workout Plan"],
+      tags: ["Workout plans"],
       summary: "Get a workout day with exercises and sessions",
       params: z.object({
         workoutPlanId: z.uuid(),
@@ -328,8 +330,8 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
 
         if (!session) {
           return reply.status(401).send({
-            message: "Unauthorized",
-            code: "UNAUTHORIZED",
+            message: "Unauthorized.",
+            code: "UNAUTHORIZED_ERROR",
           });
         }
 
@@ -356,7 +358,61 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
         if (err instanceof Error && err.message.includes("Unauthorized")) {
           return reply.status(401).send({
             message: err.message,
-            code: "UNAUTHORIZED",
+            code: "UNAUTHORIZED_ERROR",
+          });
+        }
+
+        return reply.status(500).send({
+          message: "Internal Server Error",
+          code: "INTERNAL_SERVER_ERROR",
+        });
+      }
+    },
+  });
+
+  app.withTypeProvider<ZodTypeProvider>().route({
+    method: "GET",
+    url: "/",
+    schema: {
+      tags: ["Workout plans"],
+      summary: "List workout plans.",
+      response: {
+        200: GetWorkoutPlansSchema,
+        401: ErrorSchema,
+        404: ErrorSchema,
+        500: ErrorSchema,
+      },
+      querystring: z.object({
+        active: z.string().optional(),
+      }),
+    },
+    handler: async (req, reply) => {
+      try {
+        const session = await auth.api.getSession({
+          headers: fromNodeHeaders(req.headers),
+        });
+        if (!session?.user) {
+          return reply.status(401).send({
+            message: "Unauthorized.",
+            code: "UNAUTHORIZED_ERROR",
+          });
+        }
+
+        const getWorkoutPlans = new GetWorkoutPlans();
+        const workoutPlans = await getWorkoutPlans.execute({
+          userId: session.user.id,
+          active:
+            req.query.active === "true" ? true
+            : req.query.active === "false" ? false
+            : undefined,
+        });
+
+        return reply.status(200).send(workoutPlans);
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          return reply.status(404).send({
+            message: err.message,
+            code: "NOT_FOUND_ERROR",
           });
         }
 

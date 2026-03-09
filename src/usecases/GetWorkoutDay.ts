@@ -1,7 +1,9 @@
 import dayjs from "dayjs";
+import z from "zod";
 
 import { NotFoundError } from "../errors/index.js";
 import { prisma } from "../lib/db.js";
+import { GetWorkoutDaySchema } from "../schemas/index.js";
 
 interface InputDto {
   userId: string;
@@ -9,29 +11,7 @@ interface InputDto {
   workoutDayId: string;
 }
 
-export interface OutputDto {
-  id: string;
-  name: string;
-  isRest: boolean;
-  coverImageUrl?: string;
-  estimatedDurationInSeconds: number;
-  weekDay: string;
-  exercises: Array<{
-    id: string;
-    name: string;
-    order: number;
-    sets: number;
-    reps: number;
-    restTimeInSeconds: number;
-    workoutDayId: string;
-  }>;
-  sessions: Array<{
-    id: string;
-    workoutDayId: string;
-    startedAt: string;
-    completedAt?: string;
-  }>;
-}
+type OutputDto = z.infer<typeof GetWorkoutDaySchema>;
 
 export class GetWorkoutDay {
   async execute(dto: InputDto): Promise<OutputDto> {
@@ -60,9 +40,7 @@ export class GetWorkoutDay {
     }
 
     if (workoutDay.workoutPlanId !== dto.workoutPlanId) {
-      throw new Error(
-        "Unauthorized: Workout day does not belong to workout plan",
-      );
+      throw new Error("Unauthorized: Workout day does not belong to workout plan");
     }
 
     return {
@@ -85,9 +63,7 @@ export class GetWorkoutDay {
         id: session.id,
         workoutDayId: session.workoutDayId,
         startedAt: dayjs.utc(session.startedAt).format("YYYY-MM-DD"),
-        completedAt: session.completedAt
-          ? dayjs.utc(session.completedAt).format("YYYY-MM-DD")
-          : undefined,
+        completedAt: session.completedAt ? dayjs.utc(session.completedAt).format("YYYY-MM-DD") : undefined,
       })),
     };
   }

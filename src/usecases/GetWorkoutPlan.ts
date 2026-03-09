@@ -1,24 +1,15 @@
+import z from "zod";
+
 import { NotFoundError } from "../errors/index.js";
 import { prisma } from "../lib/db.js";
+import { GetWorkoutPlanSchema } from "../schemas/index.js";
 
 interface InputDto {
   userId: string;
   workoutPlanId: string;
 }
 
-export interface OutputDto {
-  id: string;
-  name: string;
-  workoutDays: Array<{
-    id: string;
-    weekDay: string;
-    name: string;
-    isRest: boolean;
-    coverImageUrl?: string;
-    estimatedDurationInSeconds: number;
-    exercisesCount: number;
-  }>;
-}
+type OutputDto = z.infer<typeof GetWorkoutPlanSchema>;
 
 export class GetWorkoutPlan {
   async execute(dto: InputDto): Promise<OutputDto> {
