@@ -1,45 +1,30 @@
 import { randomUUID } from "crypto";
+import z from "zod";
 
 import { WeekDay } from "../generated/prisma/enums.js";
 import { prisma } from "../lib/db.js";
+import { CreateWorkoutPlanSchema } from "../schemas/index.js";
 
 interface InputDto {
   userId: string;
   name: string;
-  workoutDays: Array<{
+  workoutDays: {
     name: string;
     weekDay: WeekDay;
     isRest: boolean;
     estimatedDurationInSeconds: number;
     coverImageUrl: string | null;
-    workoutExercises: Array<{
+    exercises: {
       order: number;
       name: string;
       sets: number;
       reps: number;
       restTimeInSeconds: number;
-    }>;
-  }>;
+    }[];
+  }[];
 }
 
-export interface OutputDto {
-  id: string;
-  name: string;
-  workoutDays: Array<{
-    name: string;
-    weekDay: WeekDay;
-    isRest: boolean;
-    estimatedDurationInSeconds: number;
-    coverImageUrl: string | null;
-    workoutExercises: Array<{
-      order: number;
-      name: string;
-      sets: number;
-      reps: number;
-      restTimeInSeconds: number;
-    }>;
-  }>;
-}
+type OutputDto = z.infer<typeof CreateWorkoutPlanSchema>;
 
 export class CreateWorkoutPlan {
   async execute(dto: InputDto): Promise<OutputDto> {
@@ -75,7 +60,7 @@ export class CreateWorkoutPlan {
               isRest: workoutDay.isRest,
               coverImageUrl: workoutDay.coverImageUrl,
               workoutExercises: {
-                create: workoutDay.workoutExercises.map((exercise) => ({
+                create: workoutDay.exercises.map((exercise) => ({
                   name: exercise.name,
                   order: exercise.order,
                   sets: exercise.sets,
@@ -95,7 +80,24 @@ export class CreateWorkoutPlan {
         },
       });
 
-      return result;
+      return {
+        id: result.id,
+        name: result.name,
+        workoutDays: result.workoutDays.map((workoutDay) => ({
+          name: workoutDay.name,
+          weekDay: workoutDay.weekDay,
+          isRest: workoutDay.isRest,
+          estimatedDurationInSeconds: workoutDay.estimatedDurationInSeconds,
+          coverImageUrl: workoutDay.coverImageUrl,
+          exercises: workoutDay.workoutExercises.map((exercise) => ({
+            order: exercise.order,
+            name: exercise.name,
+            sets: exercise.sets,
+            reps: exercise.reps,
+            restTimeInSeconds: exercise.restTimeInSeconds,
+          })),
+        })),
+      };
     });
   }
 }

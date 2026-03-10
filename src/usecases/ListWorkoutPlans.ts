@@ -2,16 +2,16 @@ import z from "zod";
 
 import { NotFoundError } from "../errors/index.js";
 import { prisma } from "../lib/db.js";
-import { GetWorkoutPlansSchema } from "../schemas/index.js";
+import { ListWorkoutPlansSchema } from "../schemas/index.js";
 
 interface InputDto {
   userId: string;
   active?: boolean;
 }
 
-type OutputDto = z.infer<typeof GetWorkoutPlansSchema>;
+type OutputDto = z.infer<typeof ListWorkoutPlansSchema>;
 
-export class GetWorkoutPlans {
+export class ListWorkoutPlans {
   async execute(dto: InputDto): Promise<OutputDto> {
     const workoutPlans = await prisma.workoutPlan.findMany({
       where: {

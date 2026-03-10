@@ -11,17 +11,17 @@ import {
 } from "../errors/index.js";
 import { auth } from "../lib/auth.js";
 import {
+  CreateWorkoutPlanSchema,
   ErrorSchema,
   GetWorkoutDaySchema,
   GetWorkoutPlanSchema,
-  GetWorkoutPlansSchema,
+  ListWorkoutPlansSchema,
   UpdateWorkoutSessionBodySchema,
-  WorkoutPlanSchema,
 } from "../schemas/index.js";
 import { CreateWorkoutPlan } from "../usecases/CreateWorkoutPlan.js";
 import { GetWorkoutDay } from "../usecases/GetWorkoutDay.js";
 import { GetWorkoutPlan } from "../usecases/GetWorkoutPlan.js";
-import { GetWorkoutPlans } from "../usecases/GetWorkoutPlans.js";
+import { ListWorkoutPlans } from "../usecases/ListWorkoutPlans.js";
 import { StartWorkoutSession } from "../usecases/StartWorkoutSession.js";
 import { UpdateWorkoutSession } from "../usecases/UpdateWorkoutSession.js";
 
@@ -32,9 +32,9 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
     schema: {
       tags: ["Workout plans"],
       summary: "Create a workout plan",
-      body: WorkoutPlanSchema.omit({ id: true }),
+      body: CreateWorkoutPlanSchema.omit({ id: true }),
       response: {
-        201: WorkoutPlanSchema,
+        201: CreateWorkoutPlanSchema,
         400: ErrorSchema,
         401: ErrorSchema,
         500: ErrorSchema,
@@ -54,13 +54,11 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
           });
         }
 
-        const { name, workoutDays } = req.body;
-
         const createWorkoutPlan = new CreateWorkoutPlan();
         const workoutPlan = await createWorkoutPlan.execute({
           userId: session.user.id,
-          name,
-          workoutDays,
+          name: req.body.name,
+          workoutDays: req.body.workoutDays,
         });
 
         return reply.status(201).send(workoutPlan);
@@ -377,7 +375,7 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
       tags: ["Workout plans"],
       summary: "List workout plans.",
       response: {
-        200: GetWorkoutPlansSchema,
+        200: ListWorkoutPlansSchema,
         401: ErrorSchema,
         404: ErrorSchema,
         500: ErrorSchema,
@@ -398,8 +396,8 @@ export const workoutPlanRoutes = async (app: FastifyInstance) => {
           });
         }
 
-        const getWorkoutPlans = new GetWorkoutPlans();
-        const workoutPlans = await getWorkoutPlans.execute({
+        const listWorkListWorkoutPlans = new ListWorkoutPlans();
+        const workoutPlans = await listWorkListWorkoutPlans.execute({
           userId: session.user.id,
           active:
             req.query.active === "true" ? true

@@ -7,7 +7,7 @@ export const ErrorSchema = z.object({
   code: z.string(),
 });
 
-export const WorkoutPlanSchema = z.object({
+export const CreateWorkoutPlanSchema = z.object({
   id: z.uuid(),
   name: z.string().trim().min(1, "Workout plan needs a name."),
   workoutDays: z.array(
@@ -17,7 +17,7 @@ export const WorkoutPlanSchema = z.object({
       isRest: z.boolean().default(false),
       estimatedDurationInSeconds: z.number().min(1, "Invalid duration."),
       coverImageUrl: z.url().nullable(),
-      workoutExercises: z.array(
+      exercises: z.array(
         z.object({
           order: z.number().min(0, "Exercise order must be at least 0."),
           name: z.string().trim().min(1, "Exercise needs a name."),
@@ -119,7 +119,7 @@ export const GetStatsQuerySchema = z.object({
   to: z.iso.date(),
 });
 
-export const GetWorkoutPlansSchema = z.array(
+export const ListWorkoutPlansSchema = z.array(
   z.object({
     id: z.uuid(),
     name: z.string(),
@@ -147,3 +147,12 @@ export const GetWorkoutPlansSchema = z.array(
     ),
   }),
 );
+
+export const UserTrainDataSchema = z.object({
+  userId: z.string(),
+  userName: z.string(),
+  weightInGrams: z.number(),
+  heightInCentimeters: z.number(),
+  age: z.number(),
+  bodyFatPercentage: z.number().min(0).max(100),
+});
